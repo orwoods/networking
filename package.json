@@ -1,7 +1,7 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.3.46",
-  "description": "Library for generating gRPC classes, protobuf files for Kafka, and providing utilities for working with Kafka and pre-generated gRPC files.",
+  "version": "3.3.47",
+  "description": "A lightweight npm library for rapid and seamless setup of gRPC clients and servers in Node.js. It includes one-command generation of build files from .proto files, with full TypeScript support for streamlined development.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "repository": {
@@ -17,7 +17,7 @@
     "submit": "yarn lint && yarn build && yarn test && yarn publish --access public --non-interactive",
     "git-tag": "VERSION=`cat package.json | jq .version -r` && git tag $VERSION",
     "release": "yarn git-tag && git push origin main && yarn submit",
-    "test": "./node_modules/.bin/cross-env NODE_ENV=development ./node_modules/.bin/jest . --forceExit",
+    "test": "./node_modules/.bin/jest . --forceExit",
     "test:coverage": "yarn test --coverage",
     "lint": "./node_modules/.bin/eslint src/**/*.ts",
     "build-grpc": "mkdir -p ../../../$GRPC_DIR/generated && grpc_tools_node_protoc -I=\"../../../$GRPC_DIR\" --plugin=protoc-gen-ts=$(npm root)/.bin/protoc-gen-ts --plugin=protoc-gen-grpc=$(npm root)/.bin/grpc_tools_node_protoc_plugin --js_out=import_style=commonjs:../../../$GRPC_DIR/generated --grpc_out=grpc_js:../../../$GRPC_DIR/generated --ts_out=grpc_js:../../../$GRPC_DIR/generated \"../../../$GRPC_DIR\"/*.proto",
@@ -47,7 +47,6 @@
     "@types/jest": "29.5.12",
     "@types/node": "22.7.6",
     "@typescript-eslint/parser": "8.10.0",
-    "cross-env": "7.0.3",
     "eslint": "9.13.0",
     "eslint-plugin-import": "2.31.0",
     "husky": "9.1.6",
