@@ -1,1 +1,10 @@
-yarn lint && yarn build && yarn test && yarn version --patch --no-commit-hooks && git add package.json
+yarn lint
+yarn build
+yarn test
+
+VERSION=$(jq -r .version package.json)
+NEW_VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$3 += 1; print}')
+jq ".version = \"$NEW_VERSION\"" package.json > temp.json && mv temp.json package.json
+echo "Version updated to $NEW_VERSION"
+
+git add package.json
