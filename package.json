@@ -1,6 +1,6 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.3.19",
+  "version": "3.3.25",
   "description": "Library for generating gRPC classes, protobuf files for Kafka, and providing utilities for working with Kafka and pre-generated gRPC files.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "rm -rf build && ./node_modules/.bin/tsc",
-    "publish": "yarn lint && yarn build && yarn test && npm run build && npm publish --access public",
+    "submit": "yarn lint && yarn build && yarn test && npm publish --access public",
     "test": "./node_modules/.bin/cross-env NODE_ENV=development ./node_modules/.bin/jest . --forceExit",
     "test:coverage": "yarn test --coverage",
     "lint": "./node_modules/.bin/eslint src/**/*.ts",
