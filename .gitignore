@@ -8,7 +8,6 @@ logs/
 *.log.*
 yarn-error.log
 .DS_Store
-bin
 build
 yarn.lock
 package-lock.json
