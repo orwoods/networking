@@ -1,6 +1,6 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.3.48",
+  "version": "3.3.49",
   "description": "A lightweight npm library for rapid and seamless setup of gRPC clients and servers in Node.js. It includes one-command generation of build files from .proto files, with full TypeScript support for streamlined development.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "rm -rf build && ./node_modules/.bin/tsc",
-    "submit": "npm run lint && npm run build && npm run test && npm run publish --access public",
+    "submit": "npm run lint && npm run build && npm run test && npm publish --access public",
     "git-tag": "VERSION=`cat package.json | jq .version -r` && git tag $VERSION",
     "release": "npm run git-tag && git push origin main && npm run submit",
     "test": "./node_modules/.bin/jest . --forceExit",
