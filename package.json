@@ -1,6 +1,6 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.3.42",
+  "version": "3.3.43",
   "description": "Library for generating gRPC classes, protobuf files for Kafka, and providing utilities for working with Kafka and pre-generated gRPC files.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
