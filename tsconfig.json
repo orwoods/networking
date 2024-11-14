@@ -6,6 +6,8 @@
   "compilerOptions": {
     "module": "commonjs",
     "allowJs": true,
+    "declaration": true,
+    "declarationMap": true,
     "checkJs": true,
     "outDir": "./build",
     "incremental": false,
