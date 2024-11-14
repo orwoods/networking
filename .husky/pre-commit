@@ -1,0 +1,1 @@
+yarn lint && yarn build && yarn test && yarn version --patch --no-commit-hooks && git add package.json
