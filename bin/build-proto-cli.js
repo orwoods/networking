@@ -40,7 +40,7 @@ function replaceInFile (filePath) {
   }
 }
 
-export function findAndReplaceInDir (dir) {
+function findAndReplaceInDir (dir) {
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
     return;
   }
