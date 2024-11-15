@@ -9,10 +9,10 @@ import { TLogger } from '../types';
 
 export { ServerOptions };
 
-export abstract class GrpcServer {
+export abstract class GrpcServer <SI extends UntypedServiceImplementation> {
   protected server!: Server;
 
-  public async init (service: ServiceDefinition<UntypedServiceImplementation>, options?: ServerOptions, logger: TLogger = console) {
+  public async init (service: ServiceDefinition<SI>, options?: ServerOptions, logger: TLogger = console) {
     const { host, port, tls } = await this.getProps();
 
     const url = `${host}:${port}`;
@@ -34,7 +34,7 @@ export abstract class GrpcServer {
     });
   }
 
-  protected abstract getImplementation (): UntypedServiceImplementation;
+  protected abstract getImplementation (): SI;
 
   abstract getProps(): Promise<{ host: string; port: number; tls: boolean }>;
 }
