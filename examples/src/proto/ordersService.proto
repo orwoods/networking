@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package orders_service_api;
 
 service Orders {

@@ -16,7 +16,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@orwoods/networking": "3.4.8"
+    "@orwoods/networking": "3.4.14"
   },
   "devDependencies": {
     "@types/node": "22.7.6",
@@ -24,13 +24,9 @@
     "eslint": "9.13.0",
     "eslint-plugin-import": "2.31.0",
     "ts-node": "10.9.2",
-    "ts-protoc-gen": "0.15.0",
-    "grpc-tools": "1.12.4",
-    "grpc_tools_node_protoc_ts": "5.3.3",
     "typescript": "5.6.3"
   },
   "scripts": {
-    "build-grpc": "./node_modules/.bin/build-grpc-cli src/grpc-service/grpc",
-    "build-pb": "./node_modules/.bin/build-pb-cli src/kafka-service/pb"
+    "build-proto": "./node_modules/.bin/build-proto-cli src/proto"
   }
 }
