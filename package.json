@@ -1,6 +1,6 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.4.11",
+  "version": "3.4.12",
   "description": "A lightweight npm library for rapid and seamless setup of gRPC and Kafka clients and servers in Node.js. It includes one-command generation of build files from .proto files, with full TypeScript support for streamlined development.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -38,9 +38,9 @@
   "dependencies": {
     "@grpc/grpc-js": "1.12.2",
     "google-protobuf": "3.21.4",
-    "kafkajs": "2.2.4",
     "grpc-tools": "1.12.4",
     "grpc_tools_node_protoc_ts": "5.3.3",
+    "kafkajs": "2.2.4",
     "ts-protoc-gen": "0.15.0"
   },
   "devDependencies": {
