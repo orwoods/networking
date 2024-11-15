@@ -24,14 +24,13 @@ In the command below, if necessary, specify the correct path to the proto files
 ```bash
 npm install @orwoods/networking
 
-jq '.scripts["build-grpc"] = "./node_modules/.bin/build-grpc-cli src/grpc"' package.json > tmp.json && mv tmp.json package.json
-jq '.scripts["build-pb"] = "./node_modules/.bin/build-pb-cli src/pb"' package.json > tmp.json && mv tmp.json package.json
+jq '.scripts["build-proto"] = "./node_modules/.bin/build-proto-cli src/proto"' package.json > tmp.json && mv tmp.json package.json
 ```
 
 ## ✨ gRPC usage Example
 Here's a quick example to get you started:
 
-### 1. Place the `*.proto` files in the `src/grpc` folder
+### 1. Place the `*.proto` files in the `src/proto` folder
 ...or whatever folder you specified in the build-grpc command
 
 ### 2. Generating TypeScript files

@@ -4,6 +4,6 @@ const { resolve } = require('path');
 const { execSync } = require('child_process');
 
 const cwd = resolve(__dirname, '..');
-const grpcDir = process.argv[2] || 'src/grpc';
+const protoDir = process.argv[2] || 'src/proto';
 
-execSync(`GRPC_DIR=${grpcDir} npm run build-grpc`, { cwd, stdio: 'inherit' });
+execSync(`PROTO_DIR=${protoDir} npm run build-proto`, { cwd, stdio: 'inherit' });
