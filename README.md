@@ -9,6 +9,8 @@
 
 **@orwoods/networking** is a lightweight npm library designed for rapid and seamless setup of clients and servers for Kafka and gRPC in Node.js. It includes one-command generation of build files from `.proto` files, with full TypeScript support for streamlined development.
 
+Demo project: [https://github.com/orwoods/networking-example](https://github.com/orwoods/networking-example)
+
 ## 🚀 Features
 
 - 🌐 **Easy gRPC Setup**: Effortlessly set up both gRPC clients and servers.

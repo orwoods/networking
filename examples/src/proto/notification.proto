@@ -1,8 +1,0 @@
-syntax = "proto3";
-package notifications;
-
-message Notification {
-  string subject = 1;
-  string body = 2;
-  optional string url = 3;
-}

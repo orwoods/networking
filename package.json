@@ -1,6 +1,6 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.4.16",
+  "version": "3.4.17",
   "description": "A lightweight npm library for rapid and seamless setup of gRPC and Kafka clients and servers in Node.js. It includes one-command generation of build files from .proto files, with full TypeScript support for streamlined development.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -20,7 +20,7 @@
     "test": "./node_modules/.bin/jest . --forceExit",
     "test:coverage": "npm run test --coverage",
     "lint": "./node_modules/.bin/eslint src/**/*.ts",
-    "build-proto": "mkdir -p ../../../$PROTO_DIR/generated && grpc_tools_node_protoc -I=\"../../../$PROTO_DIR\" --plugin=protoc-gen-ts=$(npm root)/.bin/protoc-gen-ts --plugin=protoc-gen-grpc=$(npm root)/.bin/grpc_tools_node_protoc_plugin --js_out=import_style=commonjs:../../../$PROTO_DIR/generated --grpc_out=grpc_js:../../../$PROTO_DIR/generated --ts_out=grpc_js:../../../$PROTO_DIR/generated \"../../../$PROTO_DIR\"/*.proto",
+    "build-proto": "mkdir -p ../../../$PROTO_DIR/generated && grpc_tools_node_protoc -I=\"../../../$PROTO_DIR\" --plugin=protoc-gen-ts=../../.bin/protoc-gen-ts --plugin=protoc-gen-grpc=../../.bin/grpc_tools_node_protoc_plugin --js_out=import_style=commonjs:../../../$PROTO_DIR/generated --grpc_out=grpc_js:../../../$PROTO_DIR/generated --ts_out=grpc_js:../../../$PROTO_DIR/generated \"../../../$PROTO_DIR\"/*.proto",
     "prepare": "husky"
   },
   "keywords": [
