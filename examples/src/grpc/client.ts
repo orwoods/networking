@@ -1,7 +1,7 @@
 import { promisify } from 'util';
 import { GrpcClient } from '@orwoods/networking';
-import { OrdersClient } from './grpc/generated/ordersService_grpc_pb';
-import { GetOrderResponse, GetOrderRequest } from './grpc/generated/ordersService_pb';
+import { OrdersClient } from '../proto/generated/ordersService_grpc_pb';
+import { GetOrderResponse, GetOrderRequest } from '../proto/generated/ordersService_pb';
 
 export class Client extends GrpcClient <OrdersClient> {
   private getOrderFn!: (_args: GetOrderRequest) => Promise<GetOrderResponse>;

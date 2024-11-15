@@ -1,5 +1,5 @@
 import { Client } from './client';
-import { GetOrderRequest } from './grpc/generated/ordersService_pb';
+import { GetOrderRequest } from '../proto/generated/ordersService_pb';
 
 (async () => {
   const client = new Client();

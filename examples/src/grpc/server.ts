@@ -1,6 +1,6 @@
 import { GrpcServer } from '@orwoods/networking';
-import { IOrdersServer, OrdersService } from './grpc/generated/ordersService_grpc_pb';
-import { GetOrderResponse } from './grpc/generated/ordersService_pb';
+import { IOrdersServer, OrdersService } from '../proto/generated/ordersService_grpc_pb';
+import { GetOrderResponse } from '../proto/generated/ordersService_pb';
 
 export class Server extends GrpcServer <IOrdersServer> {
   public async init () {
