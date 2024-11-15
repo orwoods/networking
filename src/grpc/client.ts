@@ -1,7 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import { ClientOptions, ServiceError } from '@grpc/grpc-js';
-import { IGrpcClient, TLogger } from './types';
-import { callWithTimeout, wait } from './utils';
+import { IGrpcClient, TLogger } from '../types';
+import { callWithTimeout, wait } from '../utils';
 
 export { ClientOptions };
 export { ServiceError };
@@ -66,11 +66,11 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
     await this.start();
   }
 
-  public handleCommonError (error: Error) {
+  protected handleCommonError (error: Error) {
     this.logger.error('GrpcClient error (common)', error);
   }
 
-  public handleGrpcError (error: ServiceError) {
+  protected handleGrpcError (error: ServiceError) {
     this.logger.error('GrpcClient error (grpc)', { data: JSON.parse(JSON.stringify(error)) });
 
     if (error.code === GrpcClient.STATUS.UNAVAILABLE) {
@@ -110,5 +110,5 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
     this.checkConnectivityTimeout = setTimeout(this.checkConnectivityState.bind(this), GrpcClient.CHECK_CONNECTIVITY_INTERVAL_MS);
   }
 
-  public abstract getProps (): Promise<{ host: string; port: number; tls: boolean; timeoutMs: number | undefined }>;
+  protected abstract getProps (): Promise<{ host: string; port: number; tls: boolean; timeoutMs: number | undefined }>;
 }

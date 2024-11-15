@@ -1,6 +1,6 @@
 {
   "name": "@orwoods/networking",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "A lightweight npm library for rapid and seamless setup of gRPC clients and servers in Node.js. It includes one-command generation of build files from .proto files, with full TypeScript support for streamlined development.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -21,6 +21,7 @@
     "test:coverage": "npm run test --coverage",
     "lint": "./node_modules/.bin/eslint src/**/*.ts",
     "build-grpc": "mkdir -p ../../../$GRPC_DIR/generated && grpc_tools_node_protoc -I=\"../../../$GRPC_DIR\" --plugin=protoc-gen-ts=$(npm root)/.bin/protoc-gen-ts --plugin=protoc-gen-grpc=$(npm root)/.bin/grpc_tools_node_protoc_plugin --js_out=import_style=commonjs:../../../$GRPC_DIR/generated --grpc_out=grpc_js:../../../$GRPC_DIR/generated --ts_out=grpc_js:../../../$GRPC_DIR/generated \"../../../$GRPC_DIR\"/*.proto",
+    "build-pb": "mkdir -p ../../../$PB_DIR/generated && protoc --plugin=\"protoc-gen-ts=$(npm root)/.bin/protoc-gen-ts\" --js_out=\"import_style=commonjs,binary:$PB_DIR/generated\" --ts_out=$PB_DIR/generated $PB_DIR/*.proto --proto_path=$PB_DIR",
     "prepare": "husky"
   },
   "keywords": [
@@ -37,6 +38,7 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "1.11.2",
+    "google-protobuf": "3.21.4",
     "grpc-tools": "1.12.4",
     "grpc_tools_node_protoc_ts": "5.3.3",
     "kafkajs": "2.2.4"
@@ -44,6 +46,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "2.9.0",
     "@tsconfig/node18": "18.2.4",
+    "@types/google-protobuf": "3.15.12",
     "@types/jest": "29.5.12",
     "@types/node": "22.7.6",
     "@typescript-eslint/parser": "8.10.0",
@@ -53,6 +56,7 @@
     "jest": "29.7.0",
     "ts-jest": "29.1.2",
     "ts-node": "10.9.2",
+    "ts-protoc-gen": "0.15.0",
     "typescript": "5.6.3"
   },
   "files": [

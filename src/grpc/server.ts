@@ -5,7 +5,7 @@ import {
   ServiceDefinition,
   UntypedServiceImplementation,
 } from '@grpc/grpc-js';
-import { TLogger } from './types';
+import { TLogger } from '../types';
 
 export { ServerOptions };
 
