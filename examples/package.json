@@ -1,0 +1,33 @@
+{
+  "name": "examples",
+  "version": "1.0.0",
+  "description": "examples",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/orwoods/networking.git"
+  },
+  "homepage": "https://github.com/orwoods/networking#readme",
+  "bugs": {
+    "url": "https://github.com/orwoods/networking/issues"
+  },
+  "author": "@orwoods",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@orwoods/networking": "3.4.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.7.6",
+    "@typescript-eslint/parser": "8.10.0",
+    "eslint": "9.13.0",
+    "eslint-plugin-import": "2.31.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.6.3"
+  },
+  "scripts": {
+    "build-grpc": "./node_modules/.bin/build-grpc-cli src/grpc-service/grpc",
+    "build-pb": "./node_modules/.bin/build-pb-cli src/kafka-service/pb"
+  }
+}

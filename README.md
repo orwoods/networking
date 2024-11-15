@@ -44,11 +44,24 @@ npm run build-grpc
 Create a file named `src/server.ts`:
 ```typescript
 import { GrpcServer } from '@orwoods/networking';
-import { OrdersService } from './grpc/generated/ordersService_grpc_pb';
+import { IOrdersServer, OrdersService } from './grpc/generated/ordersService_grpc_pb';
 import { GetOrderResponse } from './grpc/generated/ordersService_pb';
 
-export class Server extends GrpcServer {
+export class Server extends GrpcServer <IOrdersServer> {
   public async init () {
+    this.registerMethods({
+      getOrder: (call, callback) => {
+        console.log(new Date(), 'Request from the client:', {
+          id: call.request.getId(),
+        });
+
+        const order = new GetOrderResponse();
+        order.setStatus('finished');
+
+        callback(null, order);
+      },
+    });
+
     await super.init(OrdersService);
   }
 
@@ -58,17 +71,6 @@ export class Server extends GrpcServer {
       port: 55306,
       tls: false,
     });
-  }
-
-  protected getImplementation () {
-    return {
-      getOrder: (call, callback) => {
-        const order = new GetOrderResponse();
-        order.setStatus('finished');
-
-        callback(null, order);
-      },
-    };
   }
 }
 ```
@@ -90,8 +92,10 @@ export class Client extends GrpcClient <OrdersClient> {
     this.getOrderFn = promisify(this.client.getOrder.bind(this.client));
   }
 
-  public async getOrder (request: GetOrderRequest): Promise<GetOrderResponse | null> {
-    return this.makeRequest(async () => this.getOrderFn(request), () => null);
+  public async getOrder (request: GetOrderRequest): Promise<GetOrderResponse> {
+    return this.makeRequest(async () => this.getOrderFn(request), () => {
+      throw new Error('getOrder error');
+    });
   }
 
   public async getProps () {
@@ -125,23 +129,27 @@ ts-node src/test_server.ts
 Create a file named `src/test_client.ts`:
 ```typescript
 import { Client } from './client';
+import { GetOrderRequest } from './grpc/generated/ordersService_pb';
 
 (async () => {
   const client = new Client();
   await client.init();
 
-  const request = new GetOrderRequest();
-  request.setId('example-id');
+  setInterval(async () => {
+    const request = new GetOrderRequest();
+    request.setId('example-id');
 
-  const order = await client.getOrder(request);
-  if (!order) {
-    throw new Error('Unknown order');
-  }
+    try {
+      const order = await client.getOrder(request);
 
-  console.log({
-    id: request.getId(),
-    status: order.getStatus(),
-  });
+      console.log(new Date(), 'Response from the server:', {
+        id: request.getId(),
+        status: order.getStatus(),
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }, 1000);
 })();
 ```
 
@@ -153,7 +161,9 @@ ts-node src/test_client.ts
 ### 6. Expected Output
 When you run both the server and the client, you should see the following output in your terminal:
 ```javascript
-{ id: 'example-id', status: 'finished' }
+2024-11-15T17:56:33.808Z Request from the client: { id: 'example-id' }
+...
+2024-11-15T17:56:33.809Z Response from the server: { id: 'example-id', status: 'finished' }
 ```
 
 ## ⚖️ License

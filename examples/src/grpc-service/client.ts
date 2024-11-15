@@ -12,8 +12,10 @@ export class Client extends GrpcClient <OrdersClient> {
     this.getOrderFn = promisify(this.client.getOrder.bind(this.client));
   }
 
-  public async getOrder (request: GetOrderRequest): Promise<GetOrderResponse | null> {
-    return this.makeRequest(async () => this.getOrderFn(request), () => null);
+  public async getOrder (request: GetOrderRequest): Promise<GetOrderResponse> {
+    return this.makeRequest(async () => this.getOrderFn(request), () => {
+      throw new Error('getOrder error');
+    });
   }
 
   public async getProps () {
