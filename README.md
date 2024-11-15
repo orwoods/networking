@@ -7,11 +7,12 @@
 
 ## 📋 Overview
 
-**@orwoods/networking** is a lightweight npm library designed for rapid and seamless setup of gRPC clients and servers in Node.js. It includes one-command generation of build files from `.proto` files, with full TypeScript support for streamlined development.
+**@orwoods/networking** is a lightweight npm library designed for rapid and seamless setup of clients and servers for Kafka and gRPC in Node.js. It includes one-command generation of build files from `.proto` files, with full TypeScript support for streamlined development.
 
 ## 🚀 Features
 
 - 🌐 **Easy gRPC Setup**: Effortlessly set up both gRPC clients and servers.
+- 🌐 **Easy Kafka Setup**: Effortlessly set up both Kafka clients and servers.
 - ⚙️ **Proto Compilation**: One-command generation of TypeScript classes from `.proto` files.
 - 🛠 **TypeScript Support**: Full TypeScript support for type-safe development.
 - 📦 **Zero Configuration**: Minimal configuration needed to get started.
@@ -24,9 +25,10 @@ In the command below, if necessary, specify the correct path to the proto files
 npm install @orwoods/networking
 
 jq '.scripts["build-grpc"] = "./node_modules/.bin/build-grpc-cli src/grpc"' package.json > tmp.json && mv tmp.json package.json
+jq '.scripts["build-pb"] = "./node_modules/.bin/build-pb-cli src/pb"' package.json > tmp.json && mv tmp.json package.json
 ```
 
-## ✨ Usage Example
+## ✨ gRPC usage Example
 Here's a quick example to get you started:
 
 ### 1. Place the `*.proto` files in the `src/grpc` folder
