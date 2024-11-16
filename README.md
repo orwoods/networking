@@ -7,7 +7,7 @@
 
 ## 📋 Overview
 
-**@orwoods/networking** is a lightweight npm library designed for rapid and seamless setup of clients and servers for Kafka and gRPC in Node.js. It includes one-command generation of build files from `.proto` files, with full TypeScript support for streamlined development.
+A lightweight npm library designed for rapid and seamless setup of gRPC clients/servers and Kafka consumers/producers in Node.js. It includes a single command for generating build files from `.proto` files with full TypeScript support to simplify development.
 
 Demo project: [https://github.com/orwoods/networking-example](https://github.com/orwoods/networking-example)
 
@@ -29,19 +29,96 @@ npm install @orwoods/networking
 jq '.scripts["build-proto"] = "./node_modules/.bin/build-proto-cli src/proto"' package.json > tmp.json && mv tmp.json package.json
 ```
 
-## ✨ gRPC usage Example
-Here's a quick example to get you started:
+## 🛠️ Compilation of Protobuf files
 
 ### 1. Place the `*.proto` files in the `src/proto` folder
 ...or whatever folder you specified in the build-grpc command
 
-### 2. Generating TypeScript files
-Run:
+### 2. Run command to compile to JS and TS
 ```bash
 npm run build-grpc
 ```
 
-### 3. Setting up a gRPC Server
+## 💻 Kafka usage Example
+Here's a quick example to get you started:
+
+### 1. Setting up a Kafka Producer
+Create a file named `src/producer.ts`:
+```typescript
+import { KafkaProducer, KafkaConfig } from '@orwoods/networking';
+
+export class Producer extends KafkaProducer {
+  public async getConfig(): Promise<KafkaConfig> {
+    return {
+      brokers: ['127.0.0.1:9092'],
+    };
+  }
+}
+```
+
+### 2. Setting up a Kafka Consumer
+Create a file named `src/consumer.ts`:
+```typescript
+import { KafkaConfig, KafkaConsumer, ConsumerConfig } from '@orwoods/networking';
+import { Notification } from '../proto/generated/notification_pb';
+
+export class Consumer extends KafkaConsumer {
+  public async getConfig(): Promise<KafkaConfig> {
+    return {
+      clientId: 'example-consumer-app',
+      brokers: ['127.0.0.1:9092'],
+    };
+  }
+
+  public async getConsumerConfig(): Promise<ConsumerConfig> {
+    return {
+      groupId: 'example-group-id',
+    };
+  }
+
+  public async onMessage(topic: string, data: Buffer): Promise<void> {
+    const notification = Notification.deserializeBinary(data);
+
+    console.warn('New message', {
+      topic,
+      subject: notification.getSubject(),
+      body: notification.getBody(),
+      url: notification.getUrl(),
+    });
+  }
+}
+```
+
+### 3. Running
+Create a file named `src/test_kafka.ts`:
+```typescript
+import { Consumer } from './kafka/listener';
+import { Producer } from './kafka/producer';
+import { Notification } from './proto/generated/notification_pb';
+
+(async () => {
+  const consumer = new Consumer();
+  const producer = new Producer();
+
+  await consumer.subscribe(['example']);
+
+  const object = new Notification();
+  object.setSubject('Hello');
+  object.setBody('World');
+  object.setUrl('http://127.0.0.1');
+
+  await producer.send({
+    topic: 'example',
+    acks: 1,
+    messages: [{ object }],
+  });
+})();
+```
+
+## 💻 gRPC usage Example
+Here's a quick example to get you started:
+
+### 1. Setting up a gRPC Server
 Create a file named `src/server.ts`:
 ```typescript
 import { GrpcServer } from '@orwoods/networking';
@@ -74,7 +151,7 @@ export class Server extends GrpcServer <IOrdersServer, IOrdersService> {
 }
 ```
 
-### 4. Setting up a gRPC Client
+### 2. Setting up a gRPC Client
 Create a file named `src/client.ts`:
 ```typescript
 import { promisify } from 'util';
@@ -108,7 +185,7 @@ export class Client extends GrpcClient <OrdersClient> {
 }
 ```
 
-### 5. Running the Server
+### 3. Running the Server
 Create a file named `src/test_server.ts`:
 ```typescript
 import { Server } from './server';
@@ -124,7 +201,7 @@ To start the server, run:
 ts-node src/test_server.ts
 ```
 
-### 5. Running the Client
+### 4. Running the Client
 Create a file named `src/test_client.ts`:
 ```typescript
 import { Client } from './client';
@@ -157,7 +234,7 @@ To start the client, run:
 ts-node src/test_client.ts
 ```
 
-### 6. Expected Output
+### 5. Expected Output
 When you run both the server and the client, you should see the following output in your terminal:
 ```javascript
 2024-11-15T17:56:33.808Z Request from the client: { id: 'example-id' }
