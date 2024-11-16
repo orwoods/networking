@@ -1,5 +1,5 @@
 import type { Message as GoogleMessage } from 'google-protobuf';
-import type { Message as OrigKafkaMessage, ProducerRecord as OrigKafkaProducerRecord } from 'kafkajs';
+import type { Message as OrigKafkaMessage, ProducerRecord as OrigKafkaProducerRecord, KafkaConfig } from 'kafkajs';
 
 export type TLogger = {
   info: (...args: any[]) => any;
@@ -14,8 +14,9 @@ export interface IGrpcClient {
   restart ();
 }
 
-export type KafkaMessage = OrigKafkaMessage & {
+export type KafkaMessage = Omit<OrigKafkaMessage, 'value'> & {
   object?: GoogleMessage;
+  value?: OrigKafkaMessage['value'];
 };
 
 export type KafkaProducerRecord = Omit<OrigKafkaProducerRecord, 'messages'> & {
@@ -23,3 +24,5 @@ export type KafkaProducerRecord = Omit<OrigKafkaProducerRecord, 'messages'> & {
 };
 
 export type KafkaConnectionStatus = 'disconnected' | 'connecting' | 'connected';
+
+export { KafkaConfig };

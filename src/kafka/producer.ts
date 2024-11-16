@@ -1,4 +1,4 @@
-import { Kafka, Producer, Partitioners, KafkaConfig, ProducerConfig } from 'kafkajs';
+import { Kafka, Producer, Partitioners, KafkaConfig, ProducerConfig, Message as OrigKafkaMessage } from 'kafkajs';
 import { TLogger, KafkaProducerRecord } from '../types';
 import { wait } from '../utils';
 import { KafkaMember } from './member';
@@ -16,7 +16,7 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
       }
 
       return message;
-    });
+    }) as OrigKafkaMessage[];
 
     try {
       await this.ready();
