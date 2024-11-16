@@ -21,7 +21,7 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
     this.logger = logger;
   }
 
-  protected async start () {
+  public async start () {
     const { host, port, tls } = await this.getProps();
 
     const url = `${host}:${port}`;
@@ -54,7 +54,7 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
     return promise;
   }
 
-  protected async stop () {
+  public async stop () {
     if (this.activePort) {
       this.server.drain(this.activePort, 1000);
       await wait(1000);
