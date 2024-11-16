@@ -13,7 +13,7 @@ export { ServerOptions };
 export abstract class GrpcServer <IMethods extends UntypedServiceImplementation, IService extends ServiceDefinition<IMethods>> {
   protected server: Server;
   private logger: TLogger;
-  private activePort?: string;
+  private activeUrl?: string;
 
   public constructor (service: IService, methods: IMethods, options?: ServerOptions, logger: TLogger = console) {
     this.server = new Server(options);
@@ -22,14 +22,12 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
   }
 
   public async start () {
-    const { host, port, tls } = await this.getProps();
-
-    const url = `${host}:${port}`;
-    const credentials = Number(tls) ? ServerCredentials.createSsl(null, [], false) : ServerCredentials.createInsecure();
-
     await this.stop();
 
-    this.activePort = String(port);
+    const { host, port, tls } = await this.getProps();
+
+    this.activeUrl = `${host}:${port}`;
+    const credentials = Number(tls) ? ServerCredentials.createSsl(null, [], false) : ServerCredentials.createInsecure();
 
     let success: (value: void | PromiseLike<void>) => void;
     let failure: (reason?: any) => void;
@@ -39,7 +37,7 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
       failure = reject;
     });
 
-    this.server.bindAsync(url, credentials, (error) => {
+    this.server.bindAsync(this.activeUrl, credentials, (error) => {
       if (error) {
         this.logger.error('GrpcServer error', error);
 
@@ -55,10 +53,13 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
   }
 
   public async stop () {
-    if (this.activePort) {
-      this.server.drain(this.activePort, 1000);
+    if (this.activeUrl) {
+      this.server.drain(this.activeUrl, 1000);
+      this.server.unbind(this.activeUrl);
+
+      this.activeUrl = undefined;
+
       await wait(1000);
-      this.server.unbind(this.activePort);
     }
   }
 
