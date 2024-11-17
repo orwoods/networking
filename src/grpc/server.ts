@@ -44,7 +44,7 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
         return failure();
       }
 
-      this.logger.info('GrpcServer server started');
+      this.logger.info('GrpcServer server started', { host, port, tls });
 
       success();
     });

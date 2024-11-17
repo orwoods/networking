@@ -191,6 +191,12 @@ export abstract class GrpcClient <C extends grpc.Client> {
     } catch (err: any) {
       if (err.code && err.metadata && err.metadata instanceof grpc.Metadata) {
         this.handleGrpcError(err, request);
+
+        if (this.config.grpcStatusesForReconnect.includes(err.code)) {
+          setTimeout(() => this.restart(), 0);
+
+          return this.enqueueRequest(request);
+        }
       } else {
         this.handleCommonError(err, request);
       }
@@ -209,12 +215,6 @@ export abstract class GrpcClient <C extends grpc.Client> {
 
   protected handleGrpcError (error: ServiceError, request: QueuedRequest) {
     this.logger.error('GrpcClient error (grpc)', { data: JSON.parse(JSON.stringify(error)) }, request);
-
-    if (this.config.grpcStatusesForReconnect.includes(error.code)) {
-      this.enqueueRequest(request);
-
-      this.restart();
-    }
   }
 
   protected getGrpcOptions (): ClientOptions {
