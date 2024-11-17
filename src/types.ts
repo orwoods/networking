@@ -14,12 +14,6 @@ export type TLogger = {
   debug: (...args: any[]) => any;
 };
 
-export interface IGrpcClient {
-  start ();
-  stop ();
-  restart ();
-}
-
 export type KafkaMessage = Omit<OrigKafkaMessage, 'value'> & {
   object?: GoogleMessage;
   value?: OrigKafkaMessage['value'];

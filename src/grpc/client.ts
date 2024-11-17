@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import { ClientOptions, ServiceError } from '@grpc/grpc-js';
-import { IGrpcClient, TLogger } from '../types';
+import { TLogger } from '../types';
 import { callWithTimeout, wait } from '../utils';
 
 export { ClientOptions };
@@ -29,9 +29,10 @@ export type ClientConfig = {
   connectionTimeoutMs: number;
   reconnectionDelayMs: number;
   maxReconnectionAttempts: number;
+  grpcStatusesForReconnect: grpc.status[]
 };
 
-export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient {
+export abstract class GrpcClient <C extends grpc.Client> {
   private static CHECK_CONNECTIVITY_INTERVAL_MS = 5 * 1000;
 
   protected client!: C;
@@ -62,6 +63,14 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
       connectionTimeoutMs: 10 * 1000,
       reconnectionDelayMs: 1 * 1000,
       maxReconnectionAttempts: 50,
+      grpcStatusesForReconnect: [
+        grpc.status.UNAVAILABLE,
+        grpc.status.DEADLINE_EXCEEDED,
+        grpc.status.INTERNAL,
+        grpc.status.RESOURCE_EXHAUSTED,
+        grpc.status.UNKNOWN,
+        grpc.status.DATA_LOSS,
+      ],
     };
     this.config = this.defaultConfig;
   }
@@ -74,30 +83,23 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
     return this.justConnecting;
   }
 
-  public async init () {
-    if (this.connecting) {
+  public async connect () {
+    if (this.justConnecting) {
       return;
     }
 
+    await this.stop();
+
     this.justConnecting = true;
-    this.justConnected = false;
 
     try {
       this.applyConfig(await this.getProps());
 
+      this.logger.info('GrpcClient connect', this.config);
+
       const { host, port, tls, connectionTimeoutMs } = this.config;
-
-      const url = `${host}:${port}`;
       const credentials: grpc.ChannelCredentials = Number(tls) ? grpc.credentials.createSsl() : grpc.credentials.createInsecure();
-      const options = this.getGrpcOptions();
-
-      if (this.client) {
-        await this.stop();
-      }
-
-      this.logger.info('GrpcClient init', this.config);
-
-      this.client = new this.ClientConstructor(url, credentials, options);
+      this.client = new this.ClientConstructor(`${host}:${port}`, credentials, this.getGrpcOptions());
 
       await new Promise<void>((connectionResolve, connectionReject) => {
         this.client.waitForReady(new Date().getTime() + connectionTimeoutMs, (error) => {
@@ -107,6 +109,8 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
 
           this.justConnecting = false;
           this.justConnected = true;
+
+          this.onInit();
 
           connectionResolve();
 
@@ -128,9 +132,9 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
         });
       });
 
-      await this.start();
+      this.checkConnectivityState();
     } catch (error: any) {
-      this.logger.error('GrpcClient init error', error, this.config);
+      this.logger.error('GrpcClient connect error', error, this.config);
 
       this.failedReconnectionAttempts++;
 
@@ -144,37 +148,29 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
 
       this.justConnecting = false;
 
-      (() => this.init())();
+      (() => this.connect())();
     }
-  }
-
-  public async start () {
-    this.logger.info('GrpcClient start');
-
-    if (this.checkConnectivityTimeout) {
-      clearTimeout(this.checkConnectivityTimeout);
-    }
-
-    this.checkConnectivityState();
   }
 
   public async stop () {
-    this.logger.info('GrpcClient stop');
-
     if (this.checkConnectivityTimeout) {
       clearTimeout(this.checkConnectivityTimeout);
+    }
+
+    if (this.client) {
+      this.logger.info('GrpcClient stop');
+
+      this.client.close();
     }
 
     this.justConnected = false;
     this.justConnecting = false;
-
-    this.client.close();
   }
 
   public async restart () {
     this.logger.info('GrpcClient restart');
 
-    await this.init();
+    await this.connect();
   }
 
   public async makeRequest <T> (fn: () => Promise<T>, defaultFn: () => T, timeoutMs?: number): Promise<T> {
@@ -212,14 +208,7 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
   protected handleGrpcError (error: ServiceError, request: QueuedRequest) {
     this.logger.error('GrpcClient error (grpc)', { data: JSON.parse(JSON.stringify(error)) }, request);
 
-    if ([
-      grpc.status.UNAVAILABLE,
-      grpc.status.DEADLINE_EXCEEDED,
-      grpc.status.INTERNAL,
-      grpc.status.RESOURCE_EXHAUSTED,
-      grpc.status.UNKNOWN,
-      grpc.status.DATA_LOSS,
-    ].includes(error.code)) {
+    if (this.config.grpcStatusesForReconnect.includes(error.code)) {
       this.enqueueRequest(request);
 
       this.restart();
@@ -262,5 +251,6 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
     });
   }
 
+  protected abstract onInit (): void;
   protected abstract getProps (): Promise<Partial<ClientConfig>>;
 }
