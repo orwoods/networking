@@ -166,16 +166,16 @@ import { GetOrderResponse, GetOrderRequest } from './grpc/generated/ordersServic
 export class Client extends GrpcClient <OrdersClient> {
   private getOrderFn!: (_args: GetOrderRequest) => Promise<GetOrderResponse>;
 
-  public async init () {
-    await super.init(OrdersClient);
+  constructor () {
+    super(OrdersClient);
+  }
 
+  protected onInit () {
     this.getOrderFn = promisify(this.client.getOrder.bind(this.client));
   }
 
-  public async getOrder (request: GetOrderRequest): Promise<GetOrderResponse> {
-    return this.makeRequest(async () => this.getOrderFn(request), () => {
-      throw new Error('getOrder error');
-    });
+  public async getOrder (request: GetOrderRequest): Promise<GetOrderResponse | null> {
+    return this.makeRequest(async () => this.getOrderFn(request), () => null);
   }
 
   public async getProps () {
@@ -183,7 +183,18 @@ export class Client extends GrpcClient <OrdersClient> {
       host: '127.0.0.1',
       port: 55306,
       tls: false,
-      timeoutMs: 5000,
+      requestTimeoutMs: 60000,
+      connectionTimeoutMs: 10000,
+      reconnectionDelayMs: 1000,
+      maxReconnectionAttempts: 50,
+      grpcStatusesForReconnect: [
+        grpc.status.UNAVAILABLE,
+        grpc.status.DEADLINE_EXCEEDED,
+        grpc.status.INTERNAL,
+        grpc.status.RESOURCE_EXHAUSTED,
+        grpc.status.UNKNOWN,
+        grpc.status.DATA_LOSS,
+      ],
     };
   }
 }
@@ -213,7 +224,7 @@ import { GetOrderRequest } from './grpc/generated/ordersService_pb';
 
 (async () => {
   const client = new Client();
-  await client.init();
+  await client.connect();
 
   setInterval(async () => {
     const request = new GetOrderRequest();

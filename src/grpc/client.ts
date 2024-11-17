@@ -110,6 +110,8 @@ export abstract class GrpcClient <C extends grpc.Client> {
           this.justConnecting = false;
           this.justConnected = true;
 
+          this.logger.info('GrpcClient connected');
+
           this.onInit();
 
           connectionResolve();
