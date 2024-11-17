@@ -45,7 +45,7 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
   private queuedRequestPromises: QueuedRequestPromise[];
 
   private defaultConfig: ClientConfig;
-  private config!: ClientConfig;
+  private config: ClientConfig;
 
   constructor (ClientConstructor: ClientConstructor <C>, logger: TLogger = console) {
     this.ClientConstructor = ClientConstructor;
@@ -63,7 +63,7 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
       reconnectionDelayMs: 1 * 1000,
       maxReconnectionAttempts: 50,
     };
-    this.applyConfig();
+    this.config = this.defaultConfig;
   }
 
   public get connected () {
