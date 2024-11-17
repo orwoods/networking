@@ -99,36 +99,38 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
 
       this.client = new this.ClientConstructor(url, credentials, options);
 
-      this.client.waitForReady(new Date().getTime() + connectionTimeoutMs, (error) => {
-        if (error) {
-          this.restart();
+      await new Promise<void>((connectionResolve, connectionReject) => {
+        this.client.waitForReady(new Date().getTime() + connectionTimeoutMs, (error) => {
+          if (error) {
+            return connectionReject(error);
+          }
 
-          return;
-        }
+          this.justConnecting = false;
+          this.justConnected = true;
 
-        this.justConnecting = false;
-        this.justConnected = true;
+          connectionResolve();
 
-        while (this.queuedRequestPromises.length > 0) {
-          (async (requestPromise: QueuedRequestPromise | undefined) => {
-            if (!requestPromise) {
-              return;
-            }
+          while (this.queuedRequestPromises.length > 0) {
+            (async (requestPromise: QueuedRequestPromise | undefined) => {
+              if (!requestPromise) {
+                return;
+              }
 
-            const { request: { fn, defaultFn, timeoutMs }, resolve, reject } = requestPromise;
+              const { request: { fn, defaultFn, timeoutMs }, resolve, reject } = requestPromise;
 
-            try {
-              resolve(await this.makeRequest(fn, defaultFn, timeoutMs));
-            } catch (error) {
-              reject(error);
-            }
-          })(this.queuedRequestPromises.shift());
-        }
+              try {
+                resolve(await this.makeRequest(fn, defaultFn, timeoutMs));
+              } catch (error) {
+                reject(error);
+              }
+            })(this.queuedRequestPromises.shift());
+          }
+        });
       });
 
       await this.start();
     } catch (error: any) {
-      this.logger.error('GrpcClient init error', error);
+      this.logger.error('GrpcClient init error', error, this.config);
 
       this.failedReconnectionAttempts++;
 
