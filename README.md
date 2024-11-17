@@ -32,11 +32,15 @@ jq '.scripts["build-proto"] = "./node_modules/.bin/build-proto-cli src/proto"' p
 ## 🛠️ Compilation of Protobuf files
 
 ### 1. Place the `*.proto` files in the `src/proto` folder
-...or whatever folder you specified in the build-grpc command
+...or whatever folder you specified in the build-proto command
 
 ### 2. Run command to compile to JS and TS
 ```bash
-npm run build-grpc
+npm run build-proto
+```
+or just
+```bash
+./node_modules/.bin/build-proto-cli src/proto
 ```
 
 ## 💻 Kafka usage Example
