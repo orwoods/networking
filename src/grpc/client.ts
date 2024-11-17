@@ -91,11 +91,11 @@ export abstract class GrpcClient <C extends grpc.Client> implements IGrpcClient 
       const credentials: grpc.ChannelCredentials = Number(tls) ? grpc.credentials.createSsl() : grpc.credentials.createInsecure();
       const options = this.getGrpcOptions();
 
-      this.logger.info('GrpcClient init', this.config);
-
       if (this.client) {
         await this.stop();
       }
+
+      this.logger.info('GrpcClient init', this.config);
 
       this.client = new this.ClientConstructor(url, credentials, options);
 
