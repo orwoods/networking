@@ -98,7 +98,11 @@ export abstract class GrpcClient <C extends grpc.Client> {
       this.logger.info('GrpcClient connect', this.config);
 
       const { host, port, tls, connectionTimeoutMs } = this.config;
-      const credentials: grpc.ChannelCredentials = Number(tls) ? grpc.credentials.createSsl() : grpc.credentials.createInsecure();
+
+      const credentials: grpc.ChannelCredentials = Number(tls)
+        ? grpc.credentials.createSsl(null, null, null, { rejectUnauthorized: false })
+        : grpc.credentials.createInsecure();
+
       this.client = new this.ClientConstructor(`${host}:${port}`, credentials, this.getGrpcOptions());
 
       await new Promise<void>((connectionResolve, connectionReject) => {
