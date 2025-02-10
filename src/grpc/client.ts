@@ -202,6 +202,8 @@ export abstract class GrpcClient <C extends grpc.Client> {
         if (this.config.grpcStatusesForReconnect.includes(err.code)) {
           setTimeout(() => this.restart(), 0);
 
+          request.attempt++;
+
           return this.enqueueRequest(request, defaultFn);
         }
       } else {
