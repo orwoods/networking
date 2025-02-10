@@ -13,6 +13,7 @@ export type QueuedRequest = {
   fn: () => Promise<any>;
   defaultFn: () => any;
   timeoutMs?: number;
+  attempt: number;
 };
 
 export type QueuedRequestPromise = {
@@ -29,6 +30,7 @@ export type ClientConfig = {
   connectionTimeoutMs: number;
   reconnectionDelayMs: number;
   maxReconnectionAttempts: number;
+  maxRequestAttempts: number;
   grpcStatusesForReconnect: grpc.status[]
 };
 
@@ -63,6 +65,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
       connectionTimeoutMs: 10 * 1000,
       reconnectionDelayMs: 1 * 1000,
       maxReconnectionAttempts: 50,
+      maxRequestAttempts: 1,
       grpcStatusesForReconnect: [
         grpc.status.UNAVAILABLE,
         grpc.status.DEADLINE_EXCEEDED,
@@ -126,10 +129,10 @@ export abstract class GrpcClient <C extends grpc.Client> {
                 return;
               }
 
-              const { request: { fn, defaultFn, timeoutMs }, resolve, reject } = requestPromise;
+              const { request: { fn, defaultFn, timeoutMs, attempt }, resolve, reject } = requestPromise;
 
               try {
-                resolve(await this.makeRequest(fn, defaultFn, timeoutMs));
+                resolve(await this.makeRequest(fn, defaultFn, timeoutMs, attempt));
               } catch (error) {
                 reject(error);
               }
@@ -179,11 +182,11 @@ export abstract class GrpcClient <C extends grpc.Client> {
     await this.connect();
   }
 
-  public async makeRequest <T> (fn: () => Promise<T>, defaultFn: () => T, timeoutMs?: number): Promise<T> {
-    const request: QueuedRequest = { fn, defaultFn, timeoutMs };
+  public async makeRequest <T> (fn: () => Promise<T>, defaultFn: () => T, timeoutMs?: number, attempt?: number): Promise<T> {
+    const request: QueuedRequest = { fn, defaultFn, timeoutMs, attempt: attempt || 0 };
 
     if (this.connecting || !this.connected) {
-      return this.enqueueRequest(request);
+      return this.enqueueRequest(request, defaultFn);
     }
 
     if (typeof timeoutMs === 'undefined') {
@@ -199,7 +202,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
         if (this.config.grpcStatusesForReconnect.includes(err.code)) {
           setTimeout(() => this.restart(), 0);
 
-          return this.enqueueRequest(request);
+          return this.enqueueRequest(request, defaultFn);
         }
       } else {
         this.handleCommonError(err, request);
@@ -227,7 +230,11 @@ export abstract class GrpcClient <C extends grpc.Client> {
     };
   }
 
-  private enqueueRequest <T> (request: QueuedRequest): Promise<T> {
+  private enqueueRequest <T> (request: QueuedRequest, defaultFn: () => T): Promise<T> {
+    if (request.attempt >= this.config.maxRequestAttempts) {
+      return Promise.resolve(defaultFn());
+    }
+
     return new Promise<T>(((resolve, reject) => {
       this.queuedRequestPromises.push({
         request,
