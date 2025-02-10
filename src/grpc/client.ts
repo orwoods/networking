@@ -200,7 +200,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
 
         request.attempt++;
 
-        const canRetry = request.attempt >= this.config.maxRequestAttempts;
+        const canRetry = request.attempt < this.config.maxRequestAttempts;
 
         if (this.config.grpcStatusesForReconnect.includes(err.code)) {
           setTimeout(() => this.restart(), 0);
