@@ -71,7 +71,6 @@ export abstract class GrpcClient <C extends grpc.Client> {
         grpc.status.DEADLINE_EXCEEDED,
         grpc.status.INTERNAL,
         grpc.status.RESOURCE_EXHAUSTED,
-        grpc.status.UNKNOWN,
         grpc.status.DATA_LOSS,
       ],
     };
@@ -186,7 +185,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
     const request: QueuedRequest = { fn, defaultFn, timeoutMs, attempt: attempt || 0 };
 
     if (this.connecting || !this.connected) {
-      return this.enqueueRequest(request, defaultFn);
+      return this.enqueueRequest(request);
     }
 
     if (typeof timeoutMs === 'undefined') {
@@ -199,13 +198,21 @@ export abstract class GrpcClient <C extends grpc.Client> {
       if (err.code && err.metadata && err.metadata instanceof grpc.Metadata) {
         this.handleGrpcError(err, request);
 
+        request.attempt++;
+
+        const canRetry = request.attempt >= this.config.maxRequestAttempts;
+
         if (this.config.grpcStatusesForReconnect.includes(err.code)) {
           setTimeout(() => this.restart(), 0);
 
-          request.attempt++;
-
-          return this.enqueueRequest(request, defaultFn);
+          if (canRetry) {
+            return this.enqueueRequest(request);
+          }
+        } else if (canRetry) {
+          return this.makeRequest(request.fn, request.defaultFn, request.timeoutMs, request.attempt);
         }
+
+        return Promise.resolve(defaultFn());
       } else {
         this.handleCommonError(err, request);
       }
@@ -232,11 +239,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
     };
   }
 
-  private enqueueRequest <T> (request: QueuedRequest, defaultFn: () => T): Promise<T> {
-    if (request.attempt >= this.config.maxRequestAttempts) {
-      return Promise.resolve(defaultFn());
-    }
-
+  private enqueueRequest <T> (request: QueuedRequest): Promise<T> {
     return new Promise<T>(((resolve, reject) => {
       this.queuedRequestPromises.push({
         request,
