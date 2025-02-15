@@ -156,7 +156,9 @@ export abstract class GrpcClient <C extends grpc.Client> {
 
       this.justConnecting = false;
 
-      (() => this.connect())();
+      this.logger.info(`GrpcClient trying to reconnect ${this.failedReconnectionAttempts} / ${this.config.maxReconnectionAttempts}`);
+
+      return this.connect();
     }
   }
 
@@ -166,7 +168,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
     }
 
     if (this.client) {
-      this.logger.info('GrpcClient stop');
+      this.logger.warn('GrpcClient stop');
 
       this.client.close();
     }
