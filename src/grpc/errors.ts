@@ -1,6 +1,6 @@
 import { Metadata, StatusObject, status as Status } from '@grpc/grpc-js';
 
-export class AbstractGrpcError<MetadataType extends { [_: string]: string }> extends Error implements StatusObject {
+export class AbstractGrpcError<MetadataType extends { [_: string]: string | number | Buffer }> extends Error implements StatusObject {
   public static readonly Statuses = Status;
 
   public details: string;
@@ -18,11 +18,15 @@ export class AbstractGrpcError<MetadataType extends { [_: string]: string }> ext
       this.metadata = new Metadata();
 
       Object.entries(metadata).forEach(([key, value]) => {
-        if (typeof value !== 'string' || typeof key !== 'string') {
-          return;
+        if (value instanceof Buffer) {
+          this.metadata.set(key, value.toString('hex'));
+        } else if (typeof value === 'number') {
+          this.metadata.set(key, value.toString());
+        } else if (typeof value === 'string') {
+          this.metadata.set(key, value);
+        } else {
+          this.metadata.set(key, JSON.stringify(value));
         }
-
-        this.metadata.set(key, value);
       });
     } else {
       this.metadata = new Metadata();
