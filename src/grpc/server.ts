@@ -7,6 +7,7 @@ import {
 } from '@grpc/grpc-js';
 import { TLogger } from '../types';
 import { wait } from '../utils';
+import { AbstractGrpcError } from './errors';
 
 export { ServerOptions };
 
@@ -17,8 +18,25 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
 
   public constructor (service: IService, methods: IMethods, options?: ServerOptions, logger: TLogger = console) {
     this.server = new Server(options);
-    this.server.addService(service, methods);
     this.logger = logger;
+
+    const wrappedMethods: UntypedServiceImplementation = {};
+
+    Object.entries(methods).forEach(([methodName, handler]) => {
+      wrappedMethods[methodName] = async (call, callback) => {
+        try {
+          await handler(call, callback);
+        } catch (err) {
+          if (err instanceof AbstractGrpcError) {
+            return callback(err);
+          }
+
+          throw err;
+        }
+      };
+    });
+
+    this.server.addService(service, wrappedMethods);
   }
 
   public async start () {
