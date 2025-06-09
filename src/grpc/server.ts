@@ -11,6 +11,8 @@ import { AbstractGrpcError } from './errors';
 
 export { ServerOptions };
 
+class SimpleError extends AbstractGrpcError<string, string> {}
+
 export abstract class GrpcServer <IMethods extends UntypedServiceImplementation, IService extends ServiceDefinition<IMethods>> {
   protected server: Server;
   private logger: TLogger;
@@ -29,6 +31,10 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
         } catch (err) {
           if (err instanceof AbstractGrpcError) {
             return callback(err);
+          }
+
+          if (err instanceof Error) {
+            return callback(new SimpleError(err.message));
           }
 
           throw err;

@@ -2,6 +2,7 @@ import * as grpc from '@grpc/grpc-js';
 import { ClientOptions, ServiceError } from '@grpc/grpc-js';
 import { TLogger } from '../types';
 import { callWithTimeout, wait } from '../utils';
+import { AbstractGrpcError } from './errors';
 
 export { ClientOptions };
 export { ServiceError };
@@ -9,9 +10,13 @@ export { grpc };
 
 export type ClientConstructor <C> = new (address: string, credentials: grpc.ChannelCredentials, opt?: ClientOptions) => C;
 
-export type QueuedRequest = {
-  fn: () => Promise<any>;
-  defaultFn: () => any;
+type TDefaultErrorClassType = AbstractGrpcError<string, string>;
+type TOnError<ErrorClassType extends TDefaultErrorClassType, ResponseType = any> = (error: ErrorClassType) => ResponseType | undefined;
+
+export type QueuedRequest<ResponseType = any, ErrorClassType extends TDefaultErrorClassType = any> = {
+  fn: () => Promise<ResponseType>;
+  defaultFn?: () => ResponseType;
+  onError?: TOnError<ErrorClassType>;
   timeoutMs?: number;
   attempt: number;
 };
@@ -128,10 +133,10 @@ export abstract class GrpcClient <C extends grpc.Client> {
                 return;
               }
 
-              const { request: { fn, defaultFn, timeoutMs, attempt }, resolve, reject } = requestPromise;
+              const { request, resolve, reject } = requestPromise;
 
               try {
-                resolve(await this.makeRequest(fn, defaultFn, timeoutMs, attempt));
+                resolve(await this.makeRequest(request));
               } catch (error) {
                 reject(error);
               }
@@ -183,20 +188,36 @@ export abstract class GrpcClient <C extends grpc.Client> {
     await this.connect();
   }
 
-  public async makeRequest <T> (fn: () => Promise<T>, defaultFn: () => T, timeoutMs?: number, attempt?: number): Promise<T> {
-    const request: QueuedRequest = { fn, defaultFn, timeoutMs, attempt: attempt || 0 };
+  public async makeRequest <T, E extends TDefaultErrorClassType = TDefaultErrorClassType> ({
+    fn,
+    defaultFn,
+    onError,
+    timeoutMs,
+    attempt,
+  }: {
+    fn: () => Promise<T>;
+    defaultFn?: QueuedRequest<T>['defaultFn'];
+    onError?: TOnError<E, T>;
+    timeoutMs?: QueuedRequest['timeoutMs'];
+    attempt?: QueuedRequest['attempt'];
+  }): Promise<T> {
+    const request: QueuedRequest<T, E> = { fn, defaultFn, onError, timeoutMs, attempt: attempt || 0 };
 
     if (this.connecting || !this.connected) {
-      return this.enqueueRequest(request);
+      return this.enqueueRequest<T, E>(request);
     }
 
     if (typeof timeoutMs === 'undefined') {
       timeoutMs = this.config.requestTimeoutMs;
     }
 
+    let exportError: TDefaultErrorClassType | undefined;
+
     try {
       return await callWithTimeout(fn(), timeoutMs);
     } catch (err: any) {
+      exportError = AbstractGrpcError.fromError<E>(err);
+
       if (err.code && err.metadata && err.metadata instanceof grpc.Metadata) {
         this.handleGrpcError(err, request);
 
@@ -211,16 +232,26 @@ export abstract class GrpcClient <C extends grpc.Client> {
             return this.enqueueRequest(request);
           }
         } else if (canRetry) {
-          return this.makeRequest(request.fn, request.defaultFn, request.timeoutMs, request.attempt);
+          return this.makeRequest(request);
         }
-
-        return Promise.resolve(defaultFn());
       } else {
         this.handleCommonError(err, request);
       }
     }
 
-    return defaultFn();
+    if (onError && exportError) {
+      const result = onError(exportError as E);
+
+      if (result !== undefined) {
+        return result;
+      }
+    }
+
+    if (defaultFn) {
+      return defaultFn();
+    }
+
+    throw new Error('GrpcClient makeRequest error: ' + (exportError ? exportError.message : 'Unknown error'));
   }
 
   protected handleStopReconnection (error: Error) {
@@ -241,7 +272,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
     };
   }
 
-  private enqueueRequest <T> (request: QueuedRequest): Promise<T> {
+  private enqueueRequest <T, E extends TDefaultErrorClassType = TDefaultErrorClassType> (request: QueuedRequest<T, E>): Promise<T> {
     return new Promise<T>(((resolve, reject) => {
       this.queuedRequestPromises.push({
         request,

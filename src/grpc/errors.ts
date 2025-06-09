@@ -1,6 +1,6 @@
 import { Metadata, StatusObject, status as Status } from '@grpc/grpc-js';
 
-export abstract class AbstractGrpcError<MetadataKey extends string, MetadataValue extends string> extends Error implements StatusObject {
+export class AbstractGrpcError<MetadataKey extends string, MetadataValue extends string> extends Error implements StatusObject {
   public static readonly Statuses = Status;
 
   public details: string;
@@ -27,5 +27,21 @@ export abstract class AbstractGrpcError<MetadataKey extends string, MetadataValu
     } else {
       this.metadata = new Metadata();
     }
+  }
+
+  static fromError<ErrorClassType extends AbstractGrpcError<string, string>> (error: Error | StatusObject): ErrorClassType {
+    if (error instanceof AbstractGrpcError) {
+      return error as ErrorClassType;
+    }
+
+    if (error && !(error instanceof Error)) {
+      const code = error.code || Status.UNKNOWN;
+      const details = error.details || 'An unknown error occurred';
+      const metadata = error.metadata || new Metadata();
+
+      return new AbstractGrpcError(details, code, metadata) as ErrorClassType;
+    }
+
+    return new AbstractGrpcError(error.message) as ErrorClassType;
   }
 };
