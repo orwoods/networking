@@ -1,13 +1,13 @@
 import { Metadata, StatusObject, status as Status } from '@grpc/grpc-js';
 
-export class AbstractGrpcError<MetadataKey extends string, MetadataValue extends string> extends Error implements StatusObject {
+export class AbstractGrpcError<MetadataType extends { [_: string]: string }> extends Error implements StatusObject {
   public static readonly Statuses = Status;
 
   public details: string;
   public code: Status;
   public metadata: Metadata;
 
-  constructor(details: string, code?: Status, metadata?: Metadata | Record<MetadataKey, MetadataValue>) {
+  constructor(details: string, code?: Status, metadata?: Metadata | MetadataType) {
     super(details);
     this.details = details;
     this.code = code || Status.UNKNOWN;
@@ -18,7 +18,7 @@ export class AbstractGrpcError<MetadataKey extends string, MetadataValue extends
       this.metadata = new Metadata();
 
       Object.entries(metadata).forEach(([key, value]) => {
-        if (typeof value !== 'string') {
+        if (typeof value !== 'string' || typeof key !== 'string') {
           return;
         }
 
@@ -29,7 +29,7 @@ export class AbstractGrpcError<MetadataKey extends string, MetadataValue extends
     }
   }
 
-  static fromError<ErrorClassType extends AbstractGrpcError<string, string>> (error: Error | StatusObject): ErrorClassType {
+  static fromError<ErrorClassType extends AbstractGrpcError<{}>> (error: Error | StatusObject): ErrorClassType {
     if (error instanceof AbstractGrpcError) {
       return error as ErrorClassType;
     }

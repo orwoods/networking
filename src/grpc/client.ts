@@ -10,7 +10,7 @@ export { grpc };
 
 export type ClientConstructor <C> = new (address: string, credentials: grpc.ChannelCredentials, opt?: ClientOptions) => C;
 
-type TDefaultErrorClassType = AbstractGrpcError<string, string>;
+type TDefaultErrorClassType = AbstractGrpcError<{}>;
 type TOnError<ErrorClassType extends TDefaultErrorClassType, ResponseType = any> = (error: ErrorClassType) => ResponseType | undefined;
 
 export type QueuedRequest<ResponseType = any, ErrorClassType extends TDefaultErrorClassType = any> = {

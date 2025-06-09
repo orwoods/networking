@@ -11,7 +11,7 @@ import { AbstractGrpcError } from './errors';
 
 export { ServerOptions };
 
-class SimpleError extends AbstractGrpcError<string, string> {}
+class SimpleError extends AbstractGrpcError<{}> {}
 
 export abstract class GrpcServer <IMethods extends UntypedServiceImplementation, IService extends ServiceDefinition<IMethods>> {
   protected server: Server;
