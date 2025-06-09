@@ -38,7 +38,7 @@ export class AbstractGrpcError<MetadataType extends { [_: string]: string | numb
       return error as ErrorClassType;
     }
 
-    if (error && !(error instanceof Error)) {
+    if (error && ('code' in error) && ('metadata' in error) && error.metadata instanceof Metadata) {
       const code = error.code || Status.UNKNOWN;
       const details = error.details || 'An unknown error occurred';
       const metadata = error.metadata || new Metadata();
@@ -46,6 +46,6 @@ export class AbstractGrpcError<MetadataType extends { [_: string]: string | numb
       return new AbstractGrpcError(details, code, metadata) as ErrorClassType;
     }
 
-    return new AbstractGrpcError(error.message) as ErrorClassType;
+    return new AbstractGrpcError('message' in error ? error.message : 'Unknown error') as ErrorClassType;
   }
 };
