@@ -27,6 +27,8 @@ export abstract class GrpcServer <IMethods extends UntypedServiceImplementation,
         try {
           await handler(call, callback);
         } catch (err) {
+          this.logger.error(`GrpcServer error in method ${methodName}`, err, call?.request?.toObject?.());
+
           if (err instanceof AbstractGrpcError) {
             return callback(err);
           }
