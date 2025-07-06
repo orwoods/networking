@@ -156,7 +156,12 @@ export abstract class GrpcClient <C extends grpc.Client> {
       if (this.failedReconnectionAttempts > this.config.maxReconnectionAttempts) {
         this.failedReconnectionAttempts = 0;
 
-        return this.handleStopReconnection(error);
+        this.justConnecting = false;
+        this.justConnected = false;
+
+        this.handleStopReconnection(error);
+
+        throw new Error(`GrpcClient connect error: ${error.message || error}`);
       }
 
       await wait(this.config.reconnectionDelayMs);
