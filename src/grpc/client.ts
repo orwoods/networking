@@ -92,8 +92,8 @@ export abstract class GrpcClient <C extends grpc.Client> {
     return this.justConnecting;
   }
 
-  public async connect () {
-    if (this.justConnecting) {
+  private async validateConnection (forceConnect = false) {
+    if (!forceConnect && (this.connecting || this.connected)) {
       return;
     }
 
@@ -170,7 +170,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
 
       this.logger.info(`GrpcClient trying to reconnect ${this.failedReconnectionAttempts} / ${this.config.maxReconnectionAttempts}`);
 
-      return this.connect();
+      return this.validateConnection(true);
     }
   }
 
@@ -192,7 +192,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
   public async restart () {
     this.logger.info('GrpcClient restart');
 
-    await this.connect();
+    await this.validateConnection(true);
   }
 
   public async makeRequest <T, E extends TDefaultErrorClassType = TDefaultErrorClassType> ({
@@ -209,6 +209,8 @@ export abstract class GrpcClient <C extends grpc.Client> {
     attempt?: QueuedRequest['attempt'];
   }): Promise<T> {
     const request: QueuedRequest<T, E> = { fn, defaultFn, onError, timeoutMs, attempt: attempt || 0 };
+
+    await this.validateConnection();
 
     if (this.connecting || !this.connected) {
       return this.enqueueRequest<T, E>(request);
