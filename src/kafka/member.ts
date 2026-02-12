@@ -7,12 +7,14 @@ export abstract class KafkaMember <Client extends { disconnect (): Promise<void>
   protected memberName: string;
   protected errorsCounter: number;
   protected logger: TLogger;
+  protected manualDisconnect: boolean;
 
   public constructor (memberName: string, logger: TLogger = console) {
     this.memberName = memberName;
     this.logger = logger;
     this.status = 'disconnected';
     this.errorsCounter = 0;
+    this.manualDisconnect = false;
   }
 
   public get connected () {
@@ -33,7 +35,9 @@ export abstract class KafkaMember <Client extends { disconnect (): Promise<void>
 
   async healthCheck (): Promise<boolean> {
     try {
-      await this.ready();
+      if (!this.manualDisconnect) {
+        await this.ready();
+      }
     } catch (e) {
       this.logger.error(`${this.memberName}: healthCheck error`, e);
     }
@@ -43,6 +47,8 @@ export abstract class KafkaMember <Client extends { disconnect (): Promise<void>
 
   public async disconnect (): Promise<void> {
     this.logger.info(`${this.memberName}: disconnect`);
+
+    this.manualDisconnect = true;
 
     if (this.client) {
       await this.client.disconnect();

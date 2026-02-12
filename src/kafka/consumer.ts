@@ -3,18 +3,31 @@ import { TLogger } from '../types';
 import { KafkaMember } from './member';
 
 export abstract class KafkaConsumer extends KafkaMember <Consumer> {
+  private topicsToSubscribe: Set<string>;
+
   public constructor (logger: TLogger = console) {
     super('KafkaConsumer', logger);
+    this.topicsToSubscribe = new Set();
   }
 
-  public async subscribe (topics: string | string[], fromBeginning = false): Promise<void> {
-    await this.ready();
+  public async subscribe (topics: string | string[]): Promise<void> {
+    this.topicsToSubscribe = new Set([
+      ...this.topicsToSubscribe,
+      ...(Array.isArray(topics) ? topics : [topics]),
+    ]);
 
+    await this.ready();
+  }
+
+  private async tryToSubscribe (): Promise<void> {
     if (!this.client) {
       return;
     }
 
-    await this.client.subscribe({ topics: Array.isArray(topics) ? topics : [topics], fromBeginning });
+    await this.client.subscribe({
+      topics: Array.from(this.topicsToSubscribe),
+      fromBeginning: false,
+    });
 
     await this.client.run({
       eachMessage: async (payload) => {
@@ -28,7 +41,7 @@ export abstract class KafkaConsumer extends KafkaMember <Consumer> {
       },
     });
 
-    this.logger.info(`${this.memberName}: subscribed`, topics);
+    this.logger.info(`${this.memberName}: subscribed`, Array.from(this.topicsToSubscribe));
   }
 
   protected async ready (): Promise<void> {
@@ -52,8 +65,8 @@ export abstract class KafkaConsumer extends KafkaMember <Consumer> {
 
     try {
       await this.client.connect();
-
       this.setStatus('connected');
+      await this.tryToSubscribe();
     } catch (error) {
       this.setStatus('disconnected');
       throw error;
@@ -64,12 +77,26 @@ export abstract class KafkaConsumer extends KafkaMember <Consumer> {
     const config = await this.getConfig();
     const consumerConfig = await this.getConsumerConfig();
 
-    const kafka = new Kafka(config);
+    this.logger.info(`${this.memberName}: init kafka consumer`, {
+      config,
+      consumerConfig,
+    });
+
+    const kafka = new Kafka({
+      ...config,
+      retry: {
+        restartOnFailure: async () => false,
+      },
+    });
 
     this.client = kafka.consumer(consumerConfig);
 
-    this.client.on('consumer.disconnect', async () => {
+    this.client.on('consumer.crash', async () => {
       this.afterDisconnect();
+
+      if (!this.manualDisconnect) {
+        await this.ready();
+      }
     });
   }
 

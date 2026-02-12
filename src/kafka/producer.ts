@@ -69,12 +69,26 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
     const config = await this.getConfig();
     const producerConfig = await this.getProducerConfig();
 
-    const kafka = new Kafka(config);
+    this.logger.info(`${this.memberName}: init kafka producer`, {
+      config,
+      producerConfig,
+    });
+
+    const kafka = new Kafka({
+      ...config,
+      retry: {
+        restartOnFailure: async () => false,
+      },
+    });
 
     this.client = kafka.producer(producerConfig);
 
-    this.client.on('producer.disconnect', () => {
+    this.client.on('producer.disconnect', async () => {
       this.afterDisconnect();
+
+      if (!this.manualDisconnect) {
+        await this.ready();
+      }
     });
   }
 
