@@ -34,12 +34,8 @@ export abstract class KafkaMember <Client extends { disconnect (): Promise<void>
   }
 
   async healthCheck (): Promise<boolean> {
-    try {
-      if (!this.manualDisconnect) {
-        await this.ready();
-      }
-    } catch (e) {
-      this.logger.error(`${this.memberName}: healthCheck error`, e);
+    if (!this.manualDisconnect) {
+      await this.ready();
     }
 
     return this.connected;

@@ -41,32 +41,74 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
     return false;
   }
 
-  protected async ready () {
-    if (!this.client) {
-      await this.init();
+  // @no throw
+  public async ready (): Promise<void> {
+    this.logger.info(`${this.memberName}: trying to connect`);
+
+    try {
+      if (!this.client) {
+        await this.init();
+      }
+    } catch (err) {
+      this.logger.error(`${this.memberName}: connection error`, err);
+
+      this.afterDisconnect();
+
+      setTimeout(() => {
+        this.ready();
+      }, 10 * 1000);
+
+      return;
     }
 
-    if (this.disconnected) {
-      await this.start();
-    }
+    if (this.disconnected && this.client) {
+      try {
+        await this.start();
+      } catch (err) {
+        this.logger.error(`${this.memberName}: connection error`, err);
 
-    for (let i = 0; i < 100; i++) {
-      if (this.connected) {
+        this.afterDisconnect();
+
+        setTimeout(() => {
+          this.ready();
+        }, 10 * 1000);
+
         return;
       }
-
-      if (this.disconnected) {
-        throw new Error('Disconnect occurred in the ready method');
-      }
-
-      await wait(100);
     }
 
-    throw new Error('Time is out in the ready method');
+    try {
+      for (let i = 0; i < 100; i++) {
+        if (this.connected) {
+          return;
+        }
+
+        if (this.disconnected) {
+          throw new Error('Disconnect occurred in the ready method');
+        }
+
+        await wait(100);
+      }
+
+      throw new Error('Time is out in the ready method');
+    } catch (err) {
+      this.logger.error(`${this.memberName}: connection error`, err);
+
+      this.afterDisconnect();
+
+      setTimeout(() => {
+        this.ready();
+      }, 10 * 1000);
+    }
   }
 
   private async init () {
     const config = await this.getConfig();
+
+    if (config.brokers.length === 0) {
+      throw new Error('No Kafka brokers available');
+    }
+
     const producerConfig = await this.getProducerConfig();
 
     this.logger.info(`${this.memberName}: init kafka producer`, {
@@ -87,7 +129,9 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
       this.afterDisconnect();
 
       if (!this.manualDisconnect) {
-        await this.ready();
+        setTimeout(() => {
+          this.ready();
+        }, 100);
       }
     });
   }
@@ -109,6 +153,8 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
       this.logger.error(`${this.memberName}: start error`, error);
 
       this.setStatus('disconnected');
+
+      throw error;
     }
   }
 

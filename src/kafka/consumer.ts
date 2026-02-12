@@ -44,13 +44,28 @@ export abstract class KafkaConsumer extends KafkaMember <Consumer> {
     this.logger.info(`${this.memberName}: subscribed`, Array.from(this.topicsToSubscribe));
   }
 
+  // @no throw
   protected async ready (): Promise<void> {
     if (this.connected) {
       return;
     }
 
-    if (this.disconnected) {
-      await this.init();
+    this.logger.info(`${this.memberName}: trying to connect`);
+
+    try {
+      if (this.disconnected) {
+        await this.init();
+      }
+    } catch (err) {
+      this.logger.error(`${this.memberName}: connection error`, err);
+
+      this.afterDisconnect();
+
+      setTimeout(() => {
+        this.ready();
+      }, 10 * 1000);
+
+      return;
     }
 
     if (!this.client) {
@@ -67,9 +82,16 @@ export abstract class KafkaConsumer extends KafkaMember <Consumer> {
       await this.client.connect();
       this.setStatus('connected');
       await this.tryToSubscribe();
-    } catch (error) {
-      this.setStatus('disconnected');
-      throw error;
+    } catch (err) {
+      this.logger.error(`${this.memberName}: connection error`, err);
+
+      this.afterDisconnect();
+
+      setTimeout(() => {
+        this.ready();
+      }, 10 * 1000);
+
+      return;
     }
   }
 
