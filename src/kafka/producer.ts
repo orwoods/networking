@@ -4,6 +4,8 @@ import { wait } from '../utils';
 import { KafkaMember } from './member';
 
 export abstract class KafkaProducer extends KafkaMember <Producer> {
+  private queue: KafkaProducerRecord[] = [];
+
   public constructor (logger: TLogger = console) {
     super('KafkaProducer', logger);
   }
@@ -34,6 +36,12 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
       return true;
     } catch (e) {
       this.logger.error(`${this.memberName}: sending error`, record, e);
+      this.queue.push(record);
+
+      if (this.connected) {
+        this.afterDisconnect();
+        this.ready();
+      }
     }
 
     this.errorsCounter++;
@@ -43,6 +51,10 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
 
   // @no throw
   public async ready (): Promise<void> {
+    if (this.connected) {
+      return;
+    }
+
     this.logger.info(`${this.memberName}: trying to connect`);
 
     try {
@@ -61,7 +73,7 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
       return;
     }
 
-    if (this.disconnected && this.client) {
+    if (this.disconnected) {
       try {
         await this.start();
       } catch (err) {
@@ -80,6 +92,17 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
     try {
       for (let i = 0; i < 100; i++) {
         if (this.connected) {
+          while (this.queue.length > 0) {
+            const record = this.queue.shift();
+            if (!record) {
+              continue;
+            }
+
+            this.send(record).catch((err) => {
+              this.logger.error(`${this.memberName}: sending error`, record, err);
+            });
+          }
+
           return;
         }
 
@@ -124,16 +147,6 @@ export abstract class KafkaProducer extends KafkaMember <Producer> {
     });
 
     this.client = kafka.producer(producerConfig);
-
-    this.client.on('producer.disconnect', async () => {
-      this.afterDisconnect();
-
-      if (!this.manualDisconnect) {
-        setTimeout(() => {
-          this.ready();
-        }, 100);
-      }
-    });
   }
 
   private async start (): Promise<void> {
