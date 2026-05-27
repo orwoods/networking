@@ -170,7 +170,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
 
       this.logger.info(`GrpcClient trying to reconnect ${this.failedReconnectionAttempts} / ${this.config.maxReconnectionAttempts}`);
 
-      return this.validateConnection(true);
+      return await this.validateConnection(true);
     }
   }
 
@@ -237,9 +237,7 @@ export abstract class GrpcClient <C extends grpc.Client> {
         if (canRetry && this.config.grpcStatusesForReconnect.includes(err.code)) {
           const promise = this.enqueueRequest(request);
 
-          this.restart().catch((restartError) => {
-            this.logger.error('GrpcClient restart error during makeRequest', restartError, request);
-          });
+          await this.restart();
 
           return promise;
         } else if (canRetry) {
