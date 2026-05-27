@@ -234,12 +234,14 @@ export abstract class GrpcClient <C extends grpc.Client> {
 
         const canRetry = request.attempt < this.config.maxRequestAttempts;
 
-        if (this.config.grpcStatusesForReconnect.includes(err.code)) {
-          setTimeout(() => this.restart(), 0);
+        if (canRetry && this.config.grpcStatusesForReconnect.includes(err.code)) {
+          const promise = this.enqueueRequest(request);
 
-          if (canRetry) {
-            return this.enqueueRequest(request);
-          }
+          this.restart().catch((restartError) => {
+            this.logger.error('GrpcClient restart error during makeRequest', restartError, request);
+          });
+
+          return promise;
         } else if (canRetry) {
           return this.makeRequest(request);
         }
